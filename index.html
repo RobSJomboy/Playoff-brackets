@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Postseason Bracket · Talkin' Baseball</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+/* ───────────── shared: the on-air bracket panel (945 × 440) ───────────── */
+:root{
+  --g1:#fff1bf; --g2:#f2c65c; --g3:#c8912a; --g4:#7a5212;
+  --rim:#c9982f;
+}
+.bp{position:absolute;width:945px;height:440px;font-family:'Bebas Neue',sans-serif;color:#fff;
+  opacity:0;transform:translateY(40px);transition:opacity .45s ease,transform .55s cubic-bezier(.2,.9,.25,1.1);}
+.bp.on{opacity:1;transform:none}
+.bp .frame{position:absolute;inset:0;padding:3px;
+  background:linear-gradient(160deg,var(--g1),var(--g2) 25%,var(--g4) 50%,var(--g2) 75%,var(--g1));
+  box-shadow:0 10px 30px rgba(0,0,0,.55)}
+.bp .inner{position:absolute;inset:3px;overflow:hidden;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.05) 0 18%,transparent 18% 40%,rgba(255,255,255,.035) 40% 52%,transparent 52% 78%,rgba(255,255,255,.05) 78%),
+    linear-gradient(35deg,transparent 0 30%,rgba(0,0,0,.25) 30% 55%,transparent 55%),
+    radial-gradient(ellipse at 50% 30%,rgba(42,42,42,var(--bgA,.94)),rgba(12,12,12,var(--bgA,.94)));}
+.bp svg.wires{position:absolute;inset:0;width:945px;height:440px;overflow:visible}
+.bp svg.wires path{fill:none;stroke:#6b5020;stroke-width:3;stroke-linecap:square;transition:stroke .4s}
+.bp svg.wires path.win{stroke:url(#goldStroke);stroke-width:4;filter:drop-shadow(0 0 3px rgba(242,198,92,.7))}
+
+.bp .t{position:absolute;width:72px;height:78px;box-sizing:border-box;border:2px solid var(--rim);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.55),0 0 0 1px #3d2906,0 3px 8px rgba(0,0,0,.5);
+  background:linear-gradient(#8d8d8d,#565656 55%,#3a3a3a);overflow:hidden;
+  transition:opacity .35s,filter .35s}
+.bp .t .bg{position:absolute;inset:0;opacity:0;transition:opacity .25s}
+.bp .t img{position:absolute;left:50%;top:5px;width:50px;height:50px;object-fit:contain;transform:translateX(-50%);
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.6));opacity:0;transition:opacity .25s}
+.bp .t .lab{position:absolute;left:0;right:0;bottom:0;height:18px;line-height:19px;text-align:center;font-size:15px;
+  letter-spacing:.5px;background:linear-gradient(#5a5a5a,#262626);border-top:1px solid rgba(255,255,255,.18);
+  opacity:0;transition:opacity .25s;white-space:nowrap}
+.bp .t.full .bg,.bp .t.full img,.bp .t.full .lab{opacity:1}
+.bp .t.out{opacity:.38;filter:grayscale(1) brightness(.7)}
+.bp .t.pop{animation:pop .7s cubic-bezier(.2,1.4,.4,1)}
+.bp .t.pop::after{content:'';position:absolute;inset:-2px;background:radial-gradient(circle,rgba(255,236,170,.9),rgba(242,198,92,0) 70%);
+  animation:flash .8s ease-out forwards;pointer-events:none}
+@keyframes pop{0%{transform:scale(.4);}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes flash{from{opacity:1}to{opacity:0}}
+
+.bp .t.champ{width:140px;height:128px;border-width:3px}
+.bp .t.champ img{width:92px;height:92px;top:6px}
+.bp .t.champ .lab{height:26px;line-height:27px;font-size:22px;letter-spacing:1px;
+  background:linear-gradient(#f2c65c,#a8741a);color:#1a1204;border-top:none}
+.bp .t.champ .script{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Great Vibes',cursive;font-size:44px;color:#8a5a1e;text-shadow:0 1px 0 rgba(255,220,160,.35);transition:opacity .25s}
+.bp .t.champ.full .script{opacity:0}
+.bp .t.champ.full{box-shadow:inset 0 0 0 1px rgba(0,0,0,.55),0 0 0 1px #3d2906,0 0 22px rgba(242,198,92,.65)}
+
+.bp .who{position:absolute;left:382px;width:181px;top:12px;text-align:center}
+.bp .who .name{font-size:54px;line-height:50px;letter-spacing:1px;
+  background:linear-gradient(#fff6d2,#f2c65c 45%,#a8741a 56%,#f0c35a 80%,#fff1bf);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 0 #3d2906) drop-shadow(0 3px 6px rgba(0,0,0,.6));white-space:nowrap}
+.bp .who .sub{font-size:15px;letter-spacing:2.5px;color:#e9e2cf;margin-top:2px}
+.bp .wslab{position:absolute;left:382px;width:181px;top:271px;text-align:center;font-size:17px;letter-spacing:2px;color:#f2c65c}
+.bp .games{position:absolute;left:382px;width:181px;top:294px;text-align:center;font-size:34px;line-height:34px;letter-spacing:1.5px;
+  color:#fff;text-shadow:0 2px 0 #3d2906,0 0 12px rgba(242,198,92,.45);opacity:0;transform:scale(.6);transition:opacity .3s,transform .45s cubic-bezier(.2,1.5,.4,1)}
+.bp .games small{display:block;font-size:15px;line-height:18px;letter-spacing:2px;color:#f2c65c;text-shadow:none}
+.bp .games.on{opacity:1;transform:none}
+.bp .brand{position:absolute;left:382px;width:181px;top:398px;text-align:center;font-size:14px;letter-spacing:2px;color:rgba(255,255,255,.55)}
+.bp .rl{position:absolute;top:396px;width:72px;text-align:center;font-size:17px;letter-spacing:1px;color:#e9e2cf}
+
+/* staggered build when the panel goes on air */
+.bp.enter .t{animation:tileIn .5s cubic-bezier(.2,1.2,.4,1) backwards;animation-delay:var(--d,0s)}
+@keyframes tileIn{from{opacity:0;transform:translateY(14px) scale(.85)}to{opacity:1;transform:none}}
+
+/* ───────────── output mode ───────────── */
+body.output{margin:0;background:transparent;overflow:hidden}
+body.output #stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+
+/* ───────────── control mode ───────────── */
+body.control{margin:0;background:#0b1a26;color:#e8eef3;font-family:'DM Sans',sans-serif;min-height:100vh}
+.control *{box-sizing:border-box}
+.control header{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid rgba(251,204,122,.25);background:#0d1f2d}
+.control header h1{font-family:'Bebas Neue';font-size:30px;letter-spacing:1.5px;margin:0;color:#fbcc7a;line-height:1}
+.control header .tag{font-family:'DM Mono';font-size:11px;color:#8aa3b8;letter-spacing:1px;text-transform:uppercase}
+.control main{display:flex;flex-direction:column;gap:18px;padding:18px 22px;max-width:1800px;margin:0 auto}
+.card{background:#10273a;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px}
+.card h2{font-family:'DM Mono';font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8aa3b8;margin:0 0 12px;font-weight:500}
+.pill{font-family:'DM Mono';font-size:10px;letter-spacing:1px;padding:4px 8px;border-radius:20px;background:#22384a;color:#8aa3b8}
+.pill.live{background:#b3261e;color:#fff}
+.pill.unsent{background:#fbcc7a;color:#1b1206}
+.airbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:10;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.airstate{font-family:'Bebas Neue';font-size:24px;letter-spacing:1.5px;padding:4px 12px;border-radius:6px;background:#22384a;color:#8aa3b8}
+.airstate.on{background:#b3261e;color:#fff}
+button.big{font-family:'Bebas Neue';font-size:24px;letter-spacing:1px;font-weight:400;padding:10px 20px}
+.editors{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.lower{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr 1fr;gap:18px;align-items:start}
+@media (max-width:1200px){.editors,.lower{grid-template-columns:1fr}}
+.edhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.edhead h3{font-family:'Bebas Neue';font-size:30px;letter-spacing:1px;color:#fbcc7a;margin:0;line-height:1}
+.gamesRow{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.gamesRow>span:first-child{font-family:'Bebas Neue';font-size:20px;letter-spacing:1px;color:#e8eef3;margin-right:4px}
+.gbtn{font-family:'Bebas Neue';font-size:24px;font-weight:400;width:48px;padding:6px 0}
+.gbtn.sel{background:linear-gradient(#fbd98f,#e2a93f);color:#1b1206;border-color:transparent}
+.ghint{font-size:13px;color:#8aa3b8;margin-left:6px}
+.previewWrap{position:relative;width:100%;aspect-ratio:945/440;border-radius:6px;overflow:hidden;
+  background:repeating-conic-gradient(#1a2e3e 0 25%,#16293a 0 50%) 0 0/24px 24px}
+.previewWrap .bp{left:0;top:0;transform-origin:0 0;opacity:1;transition:none}
+.previewWrap .bp .t.pick{cursor:pointer}
+.previewWrap .bp .t.pick:hover{outline:3px solid #fff;outline-offset:1px;z-index:2}
+.hint{font-size:13px;color:#8aa3b8;margin:10px 0 0;line-height:1.45}
+.hint b{color:#e8eef3}
+.hint.warn{color:#fbcc7a}
+.hint.err{color:#ff8a80}
+.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
+button{font-family:'DM Sans';font-weight:700;font-size:14px;border-radius:8px;border:1px solid rgba(255,255,255,.14);
+  background:#18344b;color:#e8eef3;padding:10px 14px;cursor:pointer}
+button:hover{background:#1f4260}
+button:disabled{opacity:.4;cursor:default}
+button.send{background:linear-gradient(#fbd98f,#e2a93f);color:#1b1206;border:none;font-family:'Bebas Neue';font-size:28px;letter-spacing:1.5px;
+  padding:10px 26px;font-weight:400;box-shadow:0 4px 14px rgba(251,204,122,.25)}
+button.send:hover{filter:brightness(1.07)}
+button.danger{color:#ff9b93}
+button.small{padding:6px 10px;font-size:12px}
+.spacer{flex:1}
+.monitor{position:relative;width:100%;aspect-ratio:16/9;background:#050b10;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.monitor .mstage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+.monitor .cam{position:absolute;top:10px;width:945px;height:970px;background:linear-gradient(#2b3a46,#1b2630);border:2px solid #34495a}
+.monitor .cam span{position:absolute;top:30px;left:0;right:0;text-align:center;font-family:'Bebas Neue';font-size:90px;color:#3d5467;letter-spacing:4px}
+.monitor .lt{position:absolute;left:10px;right:10px;top:990px;height:80px;background:#1b7a33}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.row label{font-size:12px;color:#8aa3b8;min-width:56px}
+input[type=text],input[type=number],select{background:#0b1a26;border:1px solid rgba(255,255,255,.14);color:#e8eef3;border-radius:7px;padding:8px 10px;
+  font-family:'DM Mono';font-size:13px;min-width:0}
+input[type=number]{width:78px}
+input[type=text]{flex:1}
+select{flex:1}
+.status{font-family:'DM Mono';font-size:11px;padding:4px 8px;border-radius:20px;background:#22384a;color:#8aa3b8;white-space:nowrap}
+.status.ok{background:#16482b;color:#8ee6a8}
+.status.bad{background:#5a1c18;color:#ff9b93}
+.seeds{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+.seeds .lg{font-family:'Bebas Neue';font-size:20px;color:#fbcc7a;letter-spacing:1px}
+.seeds .s{display:flex;align-items:center;gap:6px}
+.seeds .s b{font-family:'DM Mono';font-size:11px;color:#8aa3b8;width:14px}
+.seeds select{padding:6px 6px;font-size:12px}
+details summary{cursor:pointer;font-family:'DM Mono';font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8aa3b8;list-style:none}
+details summary::before{content:'▸ '}
+details[open] summary::before{content:'▾ '}
+details[open] summary{margin-bottom:12px}
+.side{display:flex;flex-direction:column;gap:16px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#fbcc7a;color:#1b1206;font-weight:700;
+  padding:10px 18px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%)}
+kbd{font-family:'DM Mono';font-size:11px;background:#0b1a26;border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:1px 5px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="goldStroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff1bf"/><stop offset=".5" stop-color="#f2c65c"/><stop offset="1" stop-color="#c8912a"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div id="app"></div>
+
+<script>
+'use strict';
+// ════════════════════════════════════════════════════════════════════════
+//  2026 MLB Postseason bracket — Talkin' Baseball
+//  One file, two modes:
+//    index.html                      → control window (fill out Trev's + Jake's picks)
+//    index.html?output=1&room=…      → 1920×1080 transparent OBS overlay
+//         &host=trev | jake          → only that host's bracket (default: both)
+//  Transport: Jomboy Cloudflare relay (WebSocket push, stored state on connect),
+//  plus BroadcastChannel so a same-machine output window updates with no network.
+// ════════════════════════════════════════════════════════════════════════
+
+const params = new URLSearchParams(location.search);
+const IS_OUTPUT = params.has('output');
+const HUB = (params.get('hub') || 'https://jomboy-relay.jomboymedia.workers.dev').replace(/\/$/, '');
+const STORE = 'tb-postseason-bracket-v1';
+const HOSTS = ['trev', 'jake'];
+
+// ── teams ──
+const TEAMS = {
+  108:['LAA','Angels','#BA0021','AL'], 109:['ARI','D-backs','#A71930','NL'], 110:['BAL','Orioles','#DF4601','AL'],
+  111:['BOS','Red Sox','#BD3039','AL'], 112:['CHC','Cubs','#0E3386','NL'], 113:['CIN','Reds','#C6011F','NL'],
+  114:['CLE','Guardians','#0C2340','AL'], 115:['COL','Rockies','#33006F','NL'], 116:['DET','Tigers','#0C2340','AL'],
+  117:['HOU','Astros','#002D62','AL'], 118:['KC','Royals','#004687','AL'], 119:['LAD','Dodgers','#005A9C','NL'],
+  120:['WSH','Nationals','#AB0003','NL'], 121:['NYM','Mets','#002D72','NL'], 133:['ATH','Athletics','#003831','AL'],
+  134:['PIT','Pirates','#27251F','NL'], 135:['SD','Padres','#2F241D','NL'], 136:['SEA','Mariners','#0C2C56','AL'],
+  137:['SF','Giants','#27251F','NL'], 138:['STL','Cardinals','#C41E3A','NL'], 139:['TB','Rays','#092C5C','AL'],
+  140:['TEX','Rangers','#003278','AL'], 141:['TOR','Blue Jays','#134A8E','AL'], 142:['MIN','Twins','#002B5C','AL'],
+  143:['PHI','Phillies','#E81828','NL'], 144:['ATL','Braves','#13274F','NL'], 145:['CWS','White Sox','#27251F','AL'],
+  146:['MIA','Marlins','#00A3E0','NL'], 147:['NYY','Yankees','#0C2340','AL'], 158:['MIL','Brewers','#12284B','NL'],
+};
+const logo = id => `https://www.mlbstatic.com/team-logos/team-cap-on-dark/${id}.svg`;
+const shade = (hex, f) => {  // f<0 darkens, f>0 lightens
+  const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  const m = c => Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f);
+  return `rgb(${m(r)},${m(g)},${m(b)})`;
+};
+// Seeds as of Sep 27 2026 — the same field as the Jomboy graphic.
+const DEFAULT_SEEDS = { AL:[139,114,117,147,111,145], NL:[158,119,144,135,112,143] };
+
+// ── bracket structure ──
+// Every tile has a key. Seed tiles are AL1..NL6; every other tile is the winner of a matchup.
+const MATCHUPS = {
+  ALWC1:['AL6','AL3'], ALWC2:['AL5','AL4'], ALDS1:['ALWC1','AL2'], ALDS2:['ALWC2','AL1'], ALCS:['ALDS1','ALDS2'],
+  NLWC1:['NL6','NL3'], NLWC2:['NL5','NL4'], NLDS1:['NLWC1','NL2'], NLDS2:['NLWC2','NL1'], NLCS:['NLDS1','NLDS2'],
+  WS:['ALCS','NLCS'],
+};
+const ORDER = ['ALWC1','ALWC2','ALDS1','ALDS2','ALCS','NLWC1','NLWC2','NLDS1','NLDS2','NLCS','WS'];
+const FEEDS = {};
+for (const [m, [a, b]] of Object.entries(MATCHUPS)) { FEEDS[a] = m; FEEDS[b] = m; }
+
+// ── geometry (panel pixels, 945 × 440) ──
+const TW = 72, TH = 78;
+const ROWS = [16, 113, 210, 307];
+const COLX = [14, 106, 198, 290];                 // left side; right side mirrors
+const mirror = x => 945 - x - TW;
+const C3 = [ (ROWS[0]+ROWS[1])/2, (ROWS[2]+ROWS[3])/2 ];
+const C4 = (C3[0]+C3[1])/2;
+const LAYOUT = {};
+for (const L of ['AL','NL']) {
+  const X = L === 'AL' ? COLX : COLX.map(mirror);
+  Object.assign(LAYOUT, {
+    [L+'6']:[X[0],ROWS[0]], [L+'3']:[X[0],ROWS[1]], [L+'5']:[X[0],ROWS[2]], [L+'4']:[X[0],ROWS[3]],
+    [L+'WC1']:[X[1],ROWS[0]], [L+'2']:[X[1],ROWS[1]], [L+'WC2']:[X[1],ROWS[2]], [L+'1']:[X[1],ROWS[3]],
+    [L+'DS1']:[X[2],C3[0]], [L+'DS2']:[X[2],C3[1]],
+    [L+'CS']:[X[3],C4],
+  });
+}
+const CHAMP = { x: 472.5 - 70, y: C4 + TH/2 - 64, w: 140, h: 128 };
+const box = k => k === 'WS'
+  ? { x: CHAMP.x, y: CHAMP.y, w: CHAMP.w, h: CHAMP.h }
+  : { x: LAYOUT[k][0], y: LAYOUT[k][1], w: TW, h: TH };
+const isRight = k => k.startsWith('NL');
+
+// ── bracket logic ──
+// picks = { matchupKey: seedCode }  e.g. { ALWC1:'AL3', WS:'NL1' }
+function resolve(picks) {
+  const val = {};
+  for (const L of ['AL','NL']) for (let s = 1; s <= 6; s++) val[L+s] = L+s;
+  for (const m of ORDER) {
+    const [a, b] = MATCHUPS[m], p = picks[m];
+    val[m] = p && (p === val[a] || p === val[b]) ? p : null;
+  }
+  return val;
+}
+function prune(picks) {
+  const v = resolve(picks);
+  for (const m of Object.keys(picks)) if (v[m] !== picks[m]) delete picks[m];
+  return picks;
+}
+
+// ── panel renderer ──
+// Tiles are built once and updated in place, so a repaint never reloads a logo or restarts an animation.
+function makePanel(parent, { interactive = false, onPick } = {}) {
+  const el = document.createElement('div');
+  el.className = 'bp';
+  el.innerHTML = `<div class="frame"></div><div class="inner"></div>
+    <svg class="wires" viewBox="0 0 945 440"></svg>
+    <div class="who"><div class="name"></div><div class="sub">2026 POSTSEASON PICKS</div></div>
+    <div class="wslab">WORLD SERIES CHAMPION</div>
+    <div class="games"></div>
+    <div class="brand">TALKIN' BASEBALL</div>`;
+  const labs = [['WC',0],['DS',1],['CS',2],['',3]];
+  for (const L of ['AL','NL']) for (const [r, i] of labs) {
+    const d = document.createElement('div');
+    d.className = 'rl';
+    d.textContent = r ? L + r : L + ' CHAMP';
+    d.style.left = (L === 'AL' ? COLX[i] : mirror(COLX[i])) + 'px';
+    el.appendChild(d);
+  }
+  const svg = el.querySelector('svg');
+  const wires = {};
+  for (const m of ORDER) for (const src of MATCHUPS[m]) {
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const a = box(src), d = box(m);
+    const right = m === 'WS' ? isRight(src) : isRight(m);
+    const sx = right ? a.x : a.x + a.w, sy = a.y + a.h/2;
+    const dx = right ? d.x + d.w : d.x, dy = d.y + d.h/2;
+    const xm = (sx + dx) / 2;
+    p.setAttribute('d', `M${sx} ${sy} H${xm} V${dy} H${dx}`);
+    svg.appendChild(p);
+    wires[src] = p;
+  }
+  const tiles = {};
+  const keys = [...Object.keys(LAYOUT), 'WS'];
+  keys.forEach((k, i) => {
+    const b = box(k);
+    const t = document.createElement('div');
+    t.className = 't' + (k === 'WS' ? ' champ' : '');
+    t.style.cssText = `left:${b.x}px;top:${b.y}px`;
+    t.style.setProperty('--d', (k === 'WS' ? 0.5 : (Math.abs(b.x + 36 - 472) / 472) * -0.35 + 0.4) + 's');
+    t.innerHTML = `<div class="bg"></div>${k === 'WS' ? '<div class="script">Champion</div>' : ''}<img alt=""><div class="lab"></div>`;
+    t.dataset.key = k;
+    if (interactive) t.addEventListener('click', () => onPick && onPick(k));
+    el.appendChild(t);
+    tiles[k] = { el: t, img: t.querySelector('img'), bg: t.querySelector('.bg'), lab: t.querySelector('.lab'), team: null };
+  });
+  parent.appendChild(el);
+
+  let prev = null;
+  const gamesEl = el.querySelector('.games');
+  function update({ seeds, picks, games, name, visible, animate }) {
+    const v = resolve(picks || {});
+    // series length only means something once a champion is picked
+    const g = v.WS && games >= 4 && games <= 7 ? games : 0;
+    if (String(g) !== gamesEl.dataset.g) {
+      gamesEl.dataset.g = g;
+      if (g) gamesEl.innerHTML = `IN ${g} GAMES<small>WINS SERIES 4-${g - 4}</small>`;
+      gamesEl.classList.toggle('on', !!g);
+    }
+    el.querySelector('.who .name').textContent = name || '';
+    for (const k of keys) {
+      const T = tiles[k], code = v[k];
+      const id = code ? seeds[code.slice(0, 2)][+code.slice(2) - 1] : null;
+      const team = id && TEAMS[id];
+      if (id !== T.team) {
+        T.team = id;
+        if (team) {
+          T.img.src = logo(id);
+          T.bg.style.background = `linear-gradient(${shade(team[2], .18)},${team[2]} 55%,${shade(team[2], -.45)})`;
+          const seed = code.slice(2);
+          T.lab.textContent = k === 'WS' ? team[1].toUpperCase() : (code === k ? `${seed} SEED` : `${team[0]} · ${seed}`);
+        }
+        T.el.classList.toggle('full', !!team);
+        if (animate && prev && team && k !== code) {  // a pick just landed here
+          T.el.classList.remove('pop'); void T.el.offsetWidth; T.el.classList.add('pop');
+        }
+      }
+      // winner / loser treatment
+      const m = FEEDS[k], mv = m ? v[m] : null;
+      T.el.classList.toggle('out', !!(code && mv && mv !== code));
+      T.el.classList.toggle('win', !!(code && mv && mv === code));
+      T.el.classList.toggle('pick', !!code && !!m);
+      const w = wires[k];
+      if (w) {
+        const won = !!(code && mv === code);
+        w.classList.toggle('win', won);
+        if (won) svg.appendChild(w);   // winners draw over the dim wires they share a trunk with
+      }
+    }
+    if (visible !== undefined) {
+      const was = el.classList.contains('on');
+      if (visible && !was) { el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
+      el.classList.toggle('on', !!visible);
+    }
+    prev = v;
+  }
+  return { el, update };
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  OUTPUT
+// ════════════════════════════════════════════════════════════════════════
+function runOutput() {
+  document.body.className = 'output';
+  const ROOM = params.get('room') || '';
+  const only = (params.get('host') || '').toLowerCase();
+  const stage = document.createElement('div');
+  stage.id = 'stage';
+  document.getElementById('app').appendChild(stage);
+  const fit = () => { stage.style.transform = `scale(${Math.min(innerWidth / 1920, innerHeight / 1080) || 1})`; };
+  addEventListener('resize', fit); fit();
+  // warm the cache so the first reveal never waits on a logo
+  Object.keys(TEAMS).forEach(id => { const i = new Image(); i.src = logo(id); });
+
+  const panels = {};
+  for (const h of HOSTS) if (!only || only === h || only === 'both') panels[h] = makePanel(stage);
+
+  let lastSeq = 0;
+  function apply(s) {
+    if (!s || s.app !== 'pbracket' || !(s.seq > lastSeq)) return;
+    lastSeq = s.seq;
+    for (const h of Object.keys(panels)) {
+      const P = panels[h], L = (s.layout && s.layout[h]) || { x: 0, y: 540 };
+      P.el.style.left = L.x + 'px';
+      P.el.style.top = L.y + 'px';
+      P.el.style.setProperty('--bgA', s.layout && s.layout.bgA != null ? s.layout.bgA : .94);
+      P.update({ seeds: s.seeds, picks: s.picks[h], games: s.games && s.games[h], name: s.names[h], visible: s.visible[h], animate: true });
+    }
+  }
+
+  if (!ROOM) return;
+  try { new BroadcastChannel('pbracket-' + ROOM).onmessage = e => apply(e.data); } catch {}
+
+  const url = `${HUB}/r/${encodeURIComponent(ROOM)}`;
+  let ws = null, backoff = 2000;
+  const open = () => {
+    try {
+      ws = new WebSocket(url.replace(/^http/, 'ws'));
+      ws.onopen = () => { backoff = 2000; };
+      ws.onmessage = ev => { try { apply(JSON.parse(ev.data)); } catch {} };
+      ws.onclose = () => { setTimeout(open, backoff); backoff = Math.min(backoff * 2, 30000); };
+    } catch { setTimeout(open, backoff); }
+  };
+  open();
+  // slow safety net for networks that eat the WebSocket upgrade; seq makes repeats harmless
+  const poll = async () => {
+    try {
+      const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(6000) });
+      const t = await r.text();
+      if (t && t !== 'null') apply(JSON.parse(t));
+    } catch {}
+  };
+  poll();
+  setInterval(poll, 30000);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  CONTROL
+// ════════════════════════════════════════════════════════════════════════
+function runControl() {
+  document.body.className = 'control';
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const randRoom = () => 'tb-bracket-' + Math.random().toString(36).slice(2, 8);
+  const NAMES = { trev: "TREV'S", jake: "JAKE'S" };
+  const blank = () => ({
+    room: randRoom(),
+    draft: { seeds: clone(DEFAULT_SEEDS), names: clone(NAMES), picks: { trev: {}, jake: {} }, games: { trev: 0, jake: 0 } },
+    live:  { seeds: clone(DEFAULT_SEEDS), names: clone(NAMES), picks: { trev: {}, jake: {} }, games: { trev: 0, jake: 0 }, on: false },
+    layout: { trev: { x: 10, y: 540 }, jake: { x: 967, y: 540 }, bgA: .94 },
+  });
+  let S;
+  try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(STORE) || 'null') || {}); } catch { S = blank(); }
+  // saves from the first build had per-host visibility and no series length
+  for (const k of ['draft', 'live']) S[k].games = S[k].games || { trev: 0, jake: 0 };
+  if (S.live.on === undefined) S.live.on = !!(S.live.visible && (S.live.visible.trev || S.live.visible.jake));
+  delete S.live.visible; delete S.host;
+  if (params.get('room')) S.room = params.get('room');
+  const history = [];
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch {} };
+  const nice = h => h === 'trev' ? 'Trev' : 'Jake';
+
+  const editor = h => `
+      <div class="card ed" id="ed-${h}">
+        <div class="edhead"><h3>${nice(h)}</h3><span class="pill" id="pill-${h}"></span><span class="spacer"></span>
+          <button class="small" data-act="undo" data-h="${h}">Undo</button>
+          <button class="small" data-act="revert" data-h="${h}">Revert to on-air</button>
+          <button class="small danger" data-act="clear" data-h="${h}">Clear</button></div>
+        <div class="previewWrap" id="preview-${h}"></div>
+        <div class="gamesRow"><span>World Series in</span>
+          ${[4,5,6,7].map(n => `<button class="gbtn" data-h="${h}" data-g="${n}">${n}</button>`).join('')}
+          <span class="ghint" id="ghint-${h}"></span></div>
+        <p class="hint" id="sum-${h}"></p>
+      </div>`;
+
+  document.getElementById('app').innerHTML = `
+  <header>
+    <h1>2026 Postseason Bracket</h1><span class="tag">Talkin' Baseball · on-screen picks</span>
+    <span class="spacer"></span><span class="status" id="netStatus">not sent yet</span>
+  </header>
+  <main>
+    <div class="airbar card">
+      <button class="send" id="send">Send to screen</button>
+      <button class="big" id="toggleAir">Show both</button>
+      <span class="airstate" id="airState"></span>
+      <span class="spacer"></span>
+      <p class="hint" style="margin:0">Click the team they pick and it moves up a round; click it again to take it back.
+        Both brackets go up together and come down together. <kbd>⌘↵</kbd> send · <kbd>⌘Z</kbd> undo</p>
+    </div>
+    <div class="editors">${editor('trev')}${editor('jake')}</div>
+    <div class="lower">
+      <div class="card">
+        <h2>On air now</h2>
+        <div class="monitor" id="monitor"><div class="mstage" id="mstage">
+          <div class="cam" id="cam-trev"><span>TREV</span></div><div class="cam" id="cam-jake"><span>JAKE</span></div><div class="lt"></div>
+        </div></div>
+      </div>
+      <div class="side">
+        <div class="card">
+          <h2>Connection</h2>
+          <div class="row"><input type="text" id="room" spellcheck="false"><button id="connect">Connect</button></div>
+          <div class="row"><button class="small" id="copyBoth">Copy OBS URL</button><button class="small" id="openOut">Open output window</button></div>
+          <p class="hint">OBS Browser Source at <b>1920 × 1080</b>, full frame. Each bracket already sits in its host's box.</p>
+        </div>
+        <div class="card">
+          <h2>Names on the graphic</h2>
+          <div class="row"><label>Trev</label><input type="text" id="name-trev"></div>
+          <div class="row"><label>Jake</label><input type="text" id="name-jake"></div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="card">
+          <details><summary>Seeds</summary>
+            <div class="seeds" id="seeds"></div>
+            <div class="actions"><button class="small" id="pullSeeds">Pull from MLB standings</button><button class="small" id="resetSeeds">Reset to graphic</button></div>
+            <p class="hint" id="seedHint">Seed changes go out with the next Send.</p>
+          </details>
+        </div>
+        <div class="card">
+          <details><summary>Position</summary>
+            <div class="row"><label>Trev X</label><input type="number" id="lx-trev"><label>Y</label><input type="number" id="ly-trev"></div>
+            <div class="row"><label>Jake X</label><input type="number" id="lx-jake"><label>Y</label><input type="number" id="ly-jake"></div>
+            <div class="row"><label>Backing</label><input type="range" id="bgA" min="0.4" max="1" step="0.02" style="flex:1"><span id="bgAv" class="status"></span></div>
+            <div class="actions"><button class="small" id="swapSides">Swap sides</button><button class="small" id="resetLayout">Reset</button></div>
+            <p class="hint">945 × 440 each, bottom edge 100px up (y 540). Position changes go live immediately.</p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div class="toast" id="toast"></div>`;
+
+  const $ = id => document.getElementById(id);
+  const toast = msg => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 1800); };
+
+  // ── draft previews, one per host ──
+  const prev = {}, mon = {};
+  for (const h of HOSTS) {
+    prev[h] = makePanel($('preview-' + h), { interactive: true, onPick: k => onPick(h, k) });
+    new ResizeObserver(() => { prev[h].el.style.transform = `scale(${$('preview-' + h).clientWidth / 945})`; }).observe($('preview-' + h));
+    mon[h] = makePanel($('mstage'));
+  }
+  new ResizeObserver(() => { $('mstage').style.transform = `scale(${$('monitor').clientWidth / 1920})`; }).observe($('monitor'));
+
+  const snap = h => ({ h, picks: clone(S.draft.picks[h]), games: S.draft.games[h] });
+  function onPick(h, k) {
+    const picks = S.draft.picks[h];
+    const code = resolve(picks)[k], m = FEEDS[k];
+    if (!code || !m) return;
+    history.push(snap(h));
+    if (picks[m] === code) delete picks[m]; else picks[m] = code;
+    prune(picks);
+    save(); render();
+  }
+  function undo(h) {
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (h && history[i].h !== h) continue;
+      const [e] = history.splice(i, 1);
+      S.draft.picks[e.h] = e.picks; S.draft.games[e.h] = e.games;
+      save(); render(); return;
+    }
+  }
+
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const effGames = (picks, g) => resolve(picks).WS ? g || 0 : 0;
+  const unsent = h => !same(S.draft.picks[h], S.live.picks[h]) || effGames(S.draft.picks[h], S.draft.games[h]) !== effGames(S.live.picks[h], S.live.games[h])
+    || !same(S.draft.seeds, S.live.seeds) || S.draft.names[h] !== S.live.names[h];
+  const teamOf = (seeds, code) => code && TEAMS[seeds[code.slice(0, 2)][+code.slice(2) - 1]];
+
+  function render() {
+    const anyUnsent = HOSTS.some(unsent);
+    for (const h of HOSTS) {
+      const picks = S.draft.picks[h], v = resolve(picks);
+      prev[h].update({ seeds: S.draft.seeds, picks, games: S.draft.games[h], name: S.draft.names[h], animate: true });
+      prev[h].el.style.setProperty('--bgA', S.layout.bgA);
+      const p = $('pill-' + h), u = unsent(h);
+      p.className = 'pill' + (u ? ' unsent' : S.live.on ? ' live' : '');
+      p.textContent = u ? 'unsent changes' : S.live.on ? 'on air' : 'ready';
+      // series length
+      const champ = teamOf(S.draft.seeds, v.WS);
+      document.querySelectorAll(`.gbtn[data-h="${h}"]`).forEach(b => {
+        b.disabled = !champ;
+        b.classList.toggle('sel', !!champ && +b.dataset.g === S.draft.games[h]);
+      });
+      $('ghint-' + h).textContent = !champ ? 'pick a champion first'
+        : S.draft.games[h] ? `${champ[1]} win it 4-${S.draft.games[h] - 4}` : 'optional';
+      const n = Object.keys(picks).length;
+      $('sum-' + h).textContent = `${n} of 11 picks` + (champ ? ` · champion: ${champ[1]}` : '');
+      document.querySelector(`[data-act="undo"][data-h="${h}"]`).disabled = !history.some(e => e.h === h);
+      document.querySelector(`[data-act="revert"][data-h="${h}"]`).disabled = !u;
+      // on-air monitor
+      const L = S.layout[h];
+      mon[h].el.style.left = L.x + 'px'; mon[h].el.style.top = L.y + 'px';
+      mon[h].el.style.setProperty('--bgA', S.layout.bgA);
+      mon[h].update({ seeds: S.live.seeds, picks: S.live.picks[h], games: S.live.games[h], name: S.live.names[h], visible: S.live.on, animate: true });
+      $('cam-' + h).style.left = L.x + 'px';
+    }
+    $('toggleAir').textContent = S.live.on ? 'Hide both' : 'Show both';
+    $('toggleAir').classList.toggle('danger', S.live.on);
+    $('airState').className = 'airstate' + (S.live.on ? ' on' : '');
+    $('airState').textContent = S.live.on ? (anyUnsent ? 'ON AIR · draft has unsent changes' : 'ON AIR') : 'OFF AIR';
+  }
+
+  // ── transport ──
+  let bc = null;
+  const openBC = () => { try { bc && bc.close(); bc = new BroadcastChannel('pbracket-' + S.room); } catch { bc = null; } };
+  openBC();
+  let inflight = 0;
+  async function publish() {
+    const payload = { app: 'pbracket', seq: Date.now(), seeds: S.live.seeds, names: S.live.names,
+      picks: S.live.picks, games: S.live.games, visible: { trev: S.live.on, jake: S.live.on }, layout: S.layout };
+    try { bc && bc.postMessage(payload); } catch {}
+    const st = $('netStatus'), my = ++inflight;
+    st.className = 'status'; st.textContent = 'sending…';
+    try {
+      const r = await fetch(`${HUB}/r/${encodeURIComponent(S.room)}`, { method: 'POST', body: JSON.stringify(payload), signal: AbortSignal.timeout(6000) });
+      const j = await r.json().catch(() => ({}));
+      if (my !== inflight) return;
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      st.className = 'status ok';
+      st.textContent = `sent · ${j.sent ?? 0} screen${j.sent === 1 ? '' : 's'} connected`;
+    } catch (e) {
+      if (my !== inflight) return;
+      st.className = 'status bad'; st.textContent = 'relay unreachable — OBS will not update';
+    }
+  }
+  let layoutT = 0;
+  const publishSoon = () => { clearTimeout(layoutT); layoutT = setTimeout(publish, 250); };
+
+  // Send always carries both brackets and puts both up — they never go on air one at a time.
+  function send() {
+    S.live.seeds = clone(S.draft.seeds);
+    S.live.names = clone(S.draft.names);
+    S.live.picks = clone(S.draft.picks);
+    S.live.games = clone(S.draft.games);
+    S.live.on = true;
+    save(); render(); publish();
+    toast('Both brackets sent to screen');
+  }
+
+  // ── wiring ──
+  $('send').onclick = send;
+  $('toggleAir').onclick = () => { S.live.on = !S.live.on; save(); render(); publish(); };
+  document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+    const h = b.dataset.h;
+    if (b.dataset.act === 'undo') undo(h);
+    if (b.dataset.act === 'revert') {
+      history.push(snap(h));
+      S.draft.picks[h] = clone(S.live.picks[h]); S.draft.games[h] = S.live.games[h];
+      S.draft.seeds = clone(S.live.seeds); S.draft.names = clone(S.live.names);
+      syncInputs(); save(); render();
+    }
+    if (b.dataset.act === 'clear') {
+      if (!Object.keys(S.draft.picks[h]).length && !S.draft.games[h]) return;
+      history.push(snap(h));
+      S.draft.picks[h] = {}; S.draft.games[h] = 0; save(); render();
+      toast(`${nice(h)}'s draft cleared — Undo brings it back`);
+    }
+  });
+  document.querySelectorAll('.gbtn').forEach(b => b.onclick = () => {
+    const h = b.dataset.h, g = +b.dataset.g;
+    history.push(snap(h));
+    S.draft.games[h] = S.draft.games[h] === g ? 0 : g;
+    save(); render();
+  });
+
+  addEventListener('keydown', e => {
+    if (e.target.matches('input,select')) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+    else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); send(); }
+  });
+
+  // connection
+  $('room').value = S.room;
+  $('connect').onclick = () => {
+    const v = $('room').value.trim().replace(/[^A-Za-z0-9._-]/g, '-').slice(0, 64);
+    if (!v) return;
+    S.room = v; $('room').value = v; openBC(); save(); publish();
+    toast('Connected to ' + v);
+  };
+  const outURL = () => {
+    const base = location.href.split(/[?#]/)[0];
+    return `${base}?output=1&room=${encodeURIComponent(S.room)}${params.get('hub') ? '&hub=' + encodeURIComponent(HUB) : ''}`;
+  };
+  $('copyBoth').onclick = async () => {
+    try { await navigator.clipboard.writeText(outURL()); toast('OBS URL copied'); }
+    catch { prompt('Copy this URL into OBS:', outURL()); }
+  };
+  $('openOut').onclick = () => window.open(outURL(), 'pbracket-out', 'width=960,height=540');
+
+  for (const h of HOSTS) $('name-' + h).oninput = e => { S.draft.names[h] = e.target.value.toUpperCase(); save(); render(); };
+
+  // seeds
+  const seedsEl = $('seeds');
+  for (const L of ['AL','NL']) {
+    const col = document.createElement('div');
+    col.innerHTML = `<div class="lg">${L}</div>`;
+    for (let s = 1; s <= 6; s++) {
+      const row = document.createElement('div'); row.className = 's';
+      const opts = Object.entries(TEAMS).filter(([, t]) => t[3] === L).sort((a, b) => a[1][1].localeCompare(b[1][1]))
+        .map(([id, t]) => `<option value="${id}">${t[1]}</option>`).join('');
+      row.innerHTML = `<b>${s}</b><select data-l="${L}" data-s="${s}">${opts}</select>`;
+      row.querySelector('select').onchange = e => { S.draft.seeds[L][s - 1] = +e.target.value; save(); render(); };
+      col.appendChild(row);
+    }
+    seedsEl.appendChild(col);
+  }
+  $('resetSeeds').onclick = () => { S.draft.seeds = clone(DEFAULT_SEEDS); syncInputs(); save(); render(); };
+  $('pullSeeds').onclick = async () => {
+    const hint = $('seedHint');
+    hint.className = 'hint'; hint.textContent = 'Pulling standings…';
+    try {
+      const y = new Date().getFullYear();
+      const d = await (await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${y}&standingsTypes=regularSeason`)).json();
+      const next = {}, leaders = { AL: [], NL: [] }, wc = { AL: [], NL: [] };
+      for (const r of d.records) {
+        const L = r.league.id === 103 ? 'AL' : 'NL';
+        for (const t of r.teamRecords) {
+          if (t.divisionRank === '1') leaders[L].push(t);
+          else if (['1','2','3'].includes(t.wildCardRank)) wc[L][+t.wildCardRank - 1] = t;
+        }
+      }
+      for (const L of ['AL','NL']) {
+        leaders[L].sort((a, b) => +b.winningPercentage - +a.winningPercentage);
+        next[L] = [...leaders[L], ...wc[L]].map(t => t.team.id);
+        if (next[L].length !== 6 || next[L].some(x => !TEAMS[x])) throw new Error('incomplete ' + L);
+      }
+      S.draft.seeds = next; syncInputs(); save(); render();
+      hint.textContent = 'Pulled. Ties are ordered by win % only — double-check tiebreakers. Goes out with the next Send.';
+    } catch (e) {
+      hint.className = 'hint err'; hint.textContent = "Couldn't read MLB standings — set the seeds by hand.";
+    }
+  };
+
+  // layout
+  for (const h of HOSTS) for (const ax of ['x','y']) {
+    $(`l${ax}-${h}`).oninput = e => { S.layout[h][ax] = Math.round(+e.target.value || 0); save(); render(); publishSoon(); };
+  }
+  $('bgA').oninput = e => { S.layout.bgA = +e.target.value; $('bgAv').textContent = Math.round(S.layout.bgA * 100) + '%'; save(); render(); publishSoon(); };
+  $('swapSides').onclick = () => { [S.layout.trev, S.layout.jake] = [S.layout.jake, S.layout.trev]; syncInputs(); save(); render(); publish(); };
+  $('resetLayout').onclick = () => { S.layout = blank().layout; syncInputs(); save(); render(); publish(); };
+
+  function syncInputs() {
+    for (const h of HOSTS) {
+      $('name-' + h).value = S.draft.names[h];
+      $('lx-' + h).value = S.layout[h].x; $('ly-' + h).value = S.layout[h].y;
+    }
+    document.querySelectorAll('#seeds select').forEach(s => { s.value = S.draft.seeds[s.dataset.l][s.dataset.s - 1]; });
+    $('bgA').value = S.layout.bgA; $('bgAv').textContent = Math.round(S.layout.bgA * 100) + '%';
+  }
+  syncInputs();
+  save();
+  render();
+}
+
+IS_OUTPUT ? runOutput() : runControl();
+</script>
+</body>
+</html>
